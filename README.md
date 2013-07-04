@@ -2,7 +2,7 @@ MD5Checker
 ==========
 
 ダウンロード：https://github.com/ucchyocean/MD5Checker/blob/master/release/MD5Checker.zip?raw=true<br />
-　　（↑ウイルスチェック済みです。）
+　　（↑ウイルスチェック済みです。）<br />
 使い方：<br />
 　　1. 上記URLからzipファイルをダウンロードし、解凍します。<br />
 　　2. 出てきた MD5Checker.jar を、ローカルの適当な場所においてください。<br />
