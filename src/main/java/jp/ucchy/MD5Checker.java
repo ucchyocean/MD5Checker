@@ -7,7 +7,6 @@ package jp.ucchy;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetAdapter;
@@ -33,14 +32,13 @@ import javax.swing.JTextArea;
 
 /**
  * MD5チェッカー
- * 
  * @author ucchy
  */
 public class MD5Checker {
 
     private JFrame frame;
     private JTextArea area;
-    
+
     /**
      * メインメソッド
      * @param args 実行引数
@@ -55,7 +53,7 @@ public class MD5Checker {
                 files.add(f);
             }
         }
-        
+
         // UIを開く
         MD5Checker checker = new MD5Checker();
         checker.showGUI(files);
@@ -78,12 +76,12 @@ public class MD5Checker {
         JScrollPane scrollpane = new JScrollPane(area,
                 JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                 JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-        
+
         frame.add(scrollpane);
 
         // ドラッグアンドドロップをサポートする
         DropTargetListener dtl = new DropTargetAdapter() {
-            
+
             @Override
             public void dragOver(DropTargetDragEvent dtde) {
                 if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
@@ -96,29 +94,26 @@ public class MD5Checker {
             @Override
             public void drop(DropTargetDropEvent dtde) {
                 try {
-                    
+
                     if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                        
+
                         dtde.acceptDrop(DnDConstants.ACTION_COPY);
                         Transferable t = dtde.getTransferable();
                         Object obj = t.getTransferData(DataFlavor.javaFileListFlavor);
-                        
+
                         @SuppressWarnings("unchecked")
                         List<File> list = (List<File>)obj;
-                        
+
                         for ( File f : list ) {
-                            String message = String.format("%s → %s\r\n", 
-                                    f.getAbsolutePath(), getFileMd5(f) );
+                            String message = String.format("%s：%s\r\n",
+                                    getFileMd5(f), f.getAbsolutePath() );
                             area.append(message);
                         }
-                        
+
                         dtde.dropComplete(true);
                         return;
                     }
-                } catch (UnsupportedFlavorException e) {
-                    e.printStackTrace();
-                    showErrorDialog(e.toString());
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                     showErrorDialog(e.toString());
                 }
@@ -130,43 +125,46 @@ public class MD5Checker {
         // 引数で指定されたファイルを解析して、あらかじめ表示しておく
         try {
             for ( File f : files ) {
-                String message = String.format("%s → %s\r\n", 
-                        f.getAbsolutePath(), getFileMd5(f) );
+                String message = String.format("%s：%s\r\n",
+                        getFileMd5(f), f.getAbsolutePath() );
                 area.append(message);
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            showErrorDialog(e.toString());
-        } catch (FilerException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             showErrorDialog(e.toString());
         }
-        
+
         // 表示
         frame.setVisible(true);
     }
-    
+
+    /**
+     * エラーダイアログを表示する。
+     * @param message エラーメッセージ
+     */
     private void showErrorDialog(String message) {
-        JOptionPane.showMessageDialog(frame, message, "error", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(
+                frame, message, "error", JOptionPane.ERROR_MESSAGE);
     }
-    
+
     /**
      * ファイルのMD5を取得する
-     * 
+     *
      * @param file MD5を取得するFile
      * @return MD5
      * @throws FileNotFoundException ファイルが存在しない
      * @throws FilerException 指定したFileはDirectoryである
      */
-    public static String getFileMd5(File file) throws FileNotFoundException,
-            FilerException {
+    public String getFileMd5(File file)
+            throws NoSuchAlgorithmException, IOException,
+                    FileNotFoundException, FilerException {
 
         // ファイルのみ対応
         if (!file.exists())
             throw new FileNotFoundException(
                     file.getAbsolutePath() + " was not found!");
         if (file.isDirectory())
-            throw new FilerException(file.getAbsolutePath() + " is Directory!");
+            throw new FilerException(file.getAbsolutePath() + " is folder!");
 
         // MD5計算
         DigestInputStream din = null;
@@ -184,24 +182,29 @@ public class MD5Checker {
             md5 = md.digest();
 
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+            throw e;
         } catch (IOException e) {
-            e.printStackTrace();
+            throw e;
         } finally {
             if (din != null) {
                 try {
                     din.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    // do nothing.
                 }
             }
         }
 
         return toHexadecimal(md5);
     }
-    
-    private static String toHexadecimal(byte[] bytes) {
-        
+
+    /**
+     * 指定されたbyte配列を、16進数表示に変換して返します。
+     * @param bytes byte配列
+     * @return 16進数表示の文字列
+     */
+    private String toHexadecimal(byte[] bytes) {
+
         StringBuilder str = new StringBuilder();
         for ( byte b : bytes ) {
             str.append(String.format("%02x", b));
